@@ -136,20 +136,20 @@
             color: var(--accent);
         }
 
-        .ex-video {
+        .ex-search {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             width: 36px;
             height: 36px;
             border-radius: 8px;
-            background: rgba(239,68,68,0.15);
-            color: #ef4444;
+            background: rgba(56,189,248,0.15);
+            color: var(--accent);
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 1rem;
             flex-shrink: 0;
         }
-        .ex-video:active { background: rgba(239,68,68,0.3); }
+        .ex-search:active { background: rgba(56,189,248,0.3); }
 
         .exercise-meta {
             display: flex;
@@ -377,24 +377,24 @@
         // ========== DATOS DE LA RUTINA ==========
         const ROUTINE = [
             { id: 'lunes', cls: 'lunes', dow: 1, titulo: 'LUNES: EMPUJE', ejercicios: [
-                { id: 'l1', nombre: 'Press Pecho Sentado', series: 4, reps: 10, q: 'press de pecho sentado maquina ejercicio' },
-                { id: 'l2', nombre: 'Vuelos Laterales',    series: 4, reps: 10, q: 'vuelos laterales mancuernas ejercicio' },
-                { id: 'l3', nombre: 'Tríceps Polea',       series: 4, reps: 10, q: 'extension triceps polea alta ejercicio' }
+                { id: 'l1', nombre: 'Press Pecho Sentado', series: 4, reps: 10, q: 'press de pecho sentado maquina' },
+                { id: 'l2', nombre: 'Vuelos Laterales',    series: 4, reps: 10, q: 'vuelos laterales mancuernas' },
+                { id: 'l3', nombre: 'Tríceps Polea',       series: 4, reps: 10, q: 'extension triceps polea alta' }
             ]},
             { id: 'martes', cls: 'martes', dow: 2, titulo: 'MARTES: TRACCIÓN', ejercicios: [
-                { id: 'm1', nombre: 'Jalón al Pecho', series: 4, reps: 10, q: 'jalon al pecho espalda maquina ejercicio' },
-                { id: 'm2', nombre: 'Remo Sentado',   series: 4, reps: 10, q: 'remo sentado polea baja ejercicio' },
-                { id: 'm3', nombre: 'Curl Bíceps',    series: 4, reps: 10, q: 'curl de biceps mancuerna ejercicio' }
+                { id: 'm1', nombre: 'Jalón al Pecho', series: 4, reps: 10, q: 'jalon al pecho espalda maquina' },
+                { id: 'm2', nombre: 'Remo Sentado',   series: 4, reps: 10, q: 'remo sentado bajo polea baja' },
+                { id: 'm3', nombre: 'Curl Bíceps',    series: 4, reps: 10, q: 'curl de biceps mancuerna' }
             ]},
             { id: 'miercoles', cls: 'miercoles', dow: 3, titulo: 'MIÉRCOLES: PIERNAS', ejercicios: [
-                { id: 'mi1', nombre: 'Prensa',            series: 4, reps: 10,            q: 'prensa de piernas 45 grados ejercicio' },
-                { id: 'mi2', nombre: 'Camilla Extension', series: 4, reps: 10,            q: 'extension de cuadriceps maquina ejercicio' },
+                { id: 'mi1', nombre: 'Prensa',            series: 4, reps: 10,            q: 'prensa de piernas 45 grados' },
+                { id: 'mi2', nombre: 'Camilla Extension', series: 4, reps: 10,            q: 'camilla extension cuadriceps maquina' },
                 { id: 'mi3', nombre: 'Plancha Abdom.',    series: 4, repsLabel: '45 seg', q: 'plancha abdominal isometrica' }
             ]},
             { id: 'jueves', cls: 'jueves', dow: 4, titulo: 'JUEVES: ESCULPIR', ejercicios: [
-                { id: 'j1', nombre: 'Remo 1 Mano',     series: 4, reps: 10, q: 'remo con mancuerna unilateral ejercicio' },
-                { id: 'j2', nombre: 'Press Militar',   series: 4, reps: 10, q: 'press militar hombros maquina ejercicio' },
-                { id: 'j3', nombre: 'Pec Deck',        series: 4, reps: 10, q: 'maquina pec deck pecho ejercicio' }
+                { id: 'j1', nombre: 'Remo 1 Mano',     series: 4, reps: 10, q: 'remo con mancuerna unilateral' },
+                { id: 'j2', nombre: 'Press Militar',   series: 4, reps: 10, q: 'press militar hombros maquina' },
+                { id: 'j3', nombre: 'Pec Deck',        series: 4, reps: 10, q: 'maquina pec deck pecho' }
             ]}
         ];
 
@@ -495,8 +495,8 @@
             return null;
         }
 
-        function ytSearch(q) {
-            return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
+        function imageSearch(q) {
+            return 'https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(q);
         }
 
         function fmtFecha(iso) {
@@ -571,7 +571,7 @@
                         <input type="checkbox" class="ex-check" ${exState.done ? 'checked' : ''}>
                         <span class="ex-name">${ex.nombre}</span>
                     </label>
-                    <a href="${ytSearch(ex.q)}" target="_blank" rel="noopener" class="ex-video" aria-label="Ver demo en YouTube">▶</a>
+                    <a href="${imageSearch(ex.q)}" target="_blank" rel="noopener" class="ex-search" aria-label="Buscar imágenes del ejercicio">🔍</a>
                 </div>
                 <div class="exercise-meta">
                     <span class="details">${ex.series} × ${repsLabel}</span>
@@ -644,9 +644,26 @@
                 const item = e.target.closest('.exercise-item');
                 const detail = item.querySelector('.exercise-detail');
                 const willOpen = detail.classList.contains('hidden');
+
+                // Acordeón: si vamos a abrir uno, cerramos cualquier otro abierto
+                if (willOpen) {
+                    container.querySelectorAll('.exercise-detail:not(.hidden)').forEach(d => {
+                        d.classList.add('hidden');
+                        const otherBtn = d.parentElement.querySelector('.btn-expand');
+                        if (otherBtn) {
+                            otherBtn.textContent = '▼';
+                            otherBtn.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                }
+
                 detail.classList.toggle('hidden');
                 e.target.textContent = willOpen ? '▲' : '▼';
                 e.target.setAttribute('aria-expanded', String(willOpen));
+
+                if (willOpen) {
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
             } else if (e.target.classList.contains('btn-rest')) {
                 startRest(parseInt(e.target.dataset.seconds, 10) || 90);
             }
