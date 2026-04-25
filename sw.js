@@ -1,6 +1,6 @@
 // Gym Pro Tracker - Service Worker
 // Bumpea la versión cuando cambies archivos para forzar refresh del cache
-const CACHE_VERSION = 'gym-tracker-v1';
+const CACHE_VERSION = 'gym-tracker-v2';
 
 const URLS_TO_CACHE = [
   './',
