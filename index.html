@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GymPro">
+    <meta name="theme-color" content="#0f172a">
+
+    <!-- Manifest e iconos -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icons/favicon.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+    <title>Gym Pro Tracker - Xavier</title>
+
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #38bdf8;
+            --text: #f1f5f9;
+            --subtext: #94a3b8;
+            --done: #10b981;
+            --push: #f87171;
+            --pull: #60a5fa;
+            --legs: #fbbf24;
+            --sculpt: #a78bfa;
+            --cardio: #ec4899;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 15px 15px 100px 15px;
+            line-height: 1.5;
+        }
+
+        h1 { text-align: center; font-size: 1.5rem; color: var(--accent); margin: 10px 0 5px 0; text-transform: uppercase; letter-spacing: 1px; }
+        .stats { text-align: center; color: var(--subtext); font-size: 0.85rem; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+
+        .day-section {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .day-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 8px;
+        }
+
+        .day-title { font-weight: 800; font-size: 1.2rem; }
+
+        .lunes { border-left: 6px solid var(--push); }
+        .lunes .day-title { color: var(--push); }
+        .martes { border-left: 6px solid var(--pull); }
+        .martes .day-title { color: var(--pull); }
+        .miercoles { border-left: 6px solid var(--legs); }
+        .miercoles .day-title { color: var(--legs); }
+        .jueves { border-left: 6px solid var(--sculpt); }
+        .jueves .day-title { color: var(--sculpt); }
+        .cardio-section { border-left: 6px solid var(--cardio); }
+        .cardio-section .day-title { color: var(--cardio); }
+
+        .exercise-item {
+            background: rgba(255,255,255,0.04);
+            margin-bottom: 12px;
+            padding: 14px;
+            border-radius: 12px;
+            transition: transform 0.2s, opacity 0.3s;
+        }
+
+        .exercise-item.checked {
+            opacity: 0.4;
+            transform: scale(0.98);
+            border: 1px solid var(--done);
+        }
+
+        .check-row { display: flex; align-items: center; margin-bottom: 8px; }
+
+        input[type="checkbox"] {
+            width: 28px;
+            height: 28px;
+            margin-right: 14px;
+            accent-color: var(--done);
+            cursor: pointer;
+        }
+
+        .exercise-link {
+            flex-grow: 1;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .exercise-link:active { color: #fff; }
+
+        .details {
+            background: rgba(0,0,0,0.25);
+            padding: 10px;
+            border-radius: 8px;
+            margin-left: 42px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            display: inline-block;
+        }
+
+        .cardio-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 10px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .cardio-table th, .cardio-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #334155;
+        }
+        .cardio-table th { background: #0f172a; color: var(--cardio); font-weight: 800; }
+        .cardio-table td { background: rgba(255,255,255,0.02); }
+
+        .btn-reset {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 50px;
+            font-weight: 800;
+            width: 85%;
+            max-width: 400px;
+            z-index: 100;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .btn-reset:active { background: #dc2626; transform: translateX(-50%) scale(0.95); }
+    </style>
+</head>
+<body>
+    <h1>GYM PRO TRACKER 🚀</h1>
+    <div class="stats">PERFIL: 1.75m | 83kg | META: DEFINICIÓN</div>
+
+    <div id="routine-container">
+        <!-- LUNES: EMPUJE -->
+        <div class="day-section lunes">
+            <div class="day-header"><span class="day-title">LUNES: EMPUJE</span></div>
+            <div class="exercise-item">
+                <div class="check-row">
+                    <input type="checkbox" id="l1">
+                    <a href="https://www.google.com/search?tbm=isch&q=press+de+pecho+sentado+maquina" target="_blank" class="exercise-link">Press Pecho Sentado</a>
+                </div>
+                <div class="details">4 Series x 10 Reps</div>
+            </div>
+            <div class="exercise-item">
+                <div class="check-row">
+                    <input type="checkbox" id="l2">
+                    <a href="https://www.google.com/search?tbm=isch&q=vuelos+laterales+mancuernas" target="_blank" class="exercise-link">Vuelos Laterales</a>
+                </div>
+                <div class="details">4 Series x 10 Reps</div>
+            </div>
+            <div class="exercise-item">
+                <div class="check-row">
+                    <input type="checkbox" id="l3">
+                    <a href="https://www.google.com/search?tbm=isch&q=extension+triceps+polea+alta" target="_blank" class="exercise-link">Tríceps Polea</a>
+                </div>
+                <div class="details">4 Series x 10 Reps</div>
+            </div>
+        </div>
+
+        <!-- MARTES: TRACCIÓN -->
+        <div class="day-section martes">
+            <div class="day-header"><span class="day-title">MARTES: TRACCIÓN</span></div>
+            <div class="exercise-item">
+                <div class="check-row">
+                    <input type="checkbox" id="m1">
+                    <a href="https://www.google.com/search?tbm=isch&q=jalon+al+pecho+espalda+maquina" target="_blank" class="exercise-link">Jalón al Pecho</a>
+                </div>
+                <div class="details">4 Series x 10 Reps</div>
+            </div>
+            <div class="exercise-item">
+                <div class="check-row">
+                    <input type="checkbox" id="m2">
+                    <a href="https://www.google.com/search?tbm=isch&q=remo+sentado+bajo+polea+baja" target="_blank" class="exercise-link">Remo Sentado</a>
+                </div>
+                <div class="details">4 Series x 10 Reps</div>
+            </div>
+            <div class="exercise-item">
+                <div class="check-row">
+                    <input type="checkbox" id="m3">
+                    <a href="https://www.google.com/search?tbm=isch&q=curl+de+biceps+mancuerna" target="_blank" class="exercise-link">Curl Bíceps</a>
+                </div>
+                <div class="details">4 Series x 10 Reps</div>
+            </div>
+        </div>
+
+        <!-- MIÉRCOLES: BASE -->
+        <div class="day-section miercoles">
+            <div class="day-header"><span class="day-title">MIÉRCOLES: PIERNAS</span></div>
+            <div class="exercise-item">
+                <div class="check-row">
+                    <input type="checkbox" id="mi1">
+                    <a href="https://www.google.com/search?tbm=isch&q=prensa+de+piernas+45+grados" target="_blank" class="exercise-link">Prensa</a>
+                </div>
+                <div class="details">4 Series x 10 Reps</div>
+            </div>
+            <div class="exercise-item">
+                <div class="check-row">
+                    <input type="checkbox" id="mi2">
+                    <a href="https://www.google.com/search?tbm=isch&q=camilla+extension+cuadriceps+maquina" target="_blank" class="exercise-link">Camilla Extension</a>
+                </div>
+                <div class="details">4 Series x 10 Reps</div>
+            </div>
+            <div class="exercise-item">
+                <div class="check-row">
+                    <input type="checkbox" id="mi3">
+                    <a href="https://www.google.com/search?tbm=isch&q=plancha+abdominal+isometrica" target="_blank" class="exercise-link">Plancha Abdom.</a>
+                </div>
+                <div class="details">4 Series de 45 seg</div>
+            </div>
+        </div>
+
+        <!-- JUEVES: ESCULPIR -->
+        <div class="day-section jueves">
+            <div class="day-header"><span class="day-title">JUEVES: ESCULPIR</span></div>
+            <div class="exercise-item">
+                <div class="check-row">
+                    <input type="checkbox" id="j1">
+                    <a href="https://www.google.com/search?tbm=isch&q=remo+con+mancuerna+unilateral" target="_blank" class="exercise-link">Remo 1 Mano</a>
+                </div>
+                <div class="details">4 Series x 10 Reps</div>
+            </div>
+            <div class="exercise-item">
+                <div class="check-row">
+                    <input type="checkbox" id="j2">
+                    <a href="https://www.google.com/search?tbm=isch&q=press+militar+hombros+maquina" target="_blank" class="exercise-link">Press Militar</a>
+                </div>
+                <div class="details">4 Series x 10 Reps</div>
+            </div>
+            <div class="exercise-item">
+                <div class="check-row">
+                    <input type="checkbox" id="j3">
+                    <a href="https://www.google.com/search?tbm=isch&q=maquina+pec+deck+pecho" target="_blank" class="exercise-link">Pec Deck (Pecho)</a>
+                </div>
+                <div class="details">4 Series x 10 Reps</div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE CARDIO -->
+        <div class="day-section cardio-section">
+            <div class="day-header"><span class="day-title">⏱️ CARDIO: CINTA (25')</span></div>
+            <table class="cardio-table">
+                <thead>
+                    <tr><th>Velocidad</th><th>Tiempo</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>5 km/h</td><td>5 min</td></tr>
+                    <tr><td>8 km/h</td><td>15 min</td></tr>
+                    <tr><td>11 km/h</td><td>2 min</td></tr>
+                    <tr><td>5 km/h</td><td>3 min</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <button class="btn-reset" onclick="resetCheckboxes()">🔄 REINICIAR SEMANA</button>
+
+    <script>
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+
+        // Cargar estado inicial
+        checkboxes.forEach(cb => {
+            const state = localStorage.getItem(cb.id);
+            if (state === 'true') {
+                cb.checked = true;
+                cb.parentElement.parentElement.classList.add('checked');
+            }
+
+            // Evento de cambio
+            cb.addEventListener('change', () => {
+                localStorage.setItem(cb.id, cb.checked);
+                if (cb.checked) {
+                    cb.parentElement.parentElement.classList.add('checked');
+                } else {
+                    cb.parentElement.parentElement.classList.remove('checked');
+                }
+            });
+        });
+
+        // Función reset
+        function resetCheckboxes() {
+            if(confirm('¿Seguro que querés reiniciar todo el progreso de la semana?')) {
+                checkboxes.forEach(cb => {
+                    cb.checked = false;
+                    cb.parentElement.parentElement.classList.remove('checked');
+                    localStorage.removeItem(cb.id);
+                });
+            }
+        }
+
+        // Registro del Service Worker (PWA)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW registrado:', reg.scope))
+                    .catch(err => console.log('SW falló:', err));
+            });
+        }
+    </script>
+</body>
+</html>
