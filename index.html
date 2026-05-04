@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="GymPro">
-    <meta name="theme-color" content="#14181f">
+    <meta name="theme-color" content="#000000">
 
     <!-- Open Graph -->
     <meta property="og:title" content="Gym Pro Tracker">
@@ -26,29 +26,31 @@
 
     <style>
         :root {
-            --bg: #14181f;
-            --card: #1d232c;
-            --accent: #7d9aa8;
-            --text: #dde2e8;
-            --subtext: #8590a0;
-            --done: #7d9d82;
-            --push: #b88478;
-            --pull: #6f8eb0;
-            --legs: #c2a16b;
-            --sculpt: #9489a8;
-            --cardio: #b7849a;
-            --danger: #b97373;
+            --bg: #000000;
+            --card: #0d0d0d;
+            --accent: #ffd60a;
+            --text: #ffffff;
+            --subtext: #a1a1aa;
+            --done: #22c55e;
+            --push: #ffd60a;
+            --pull: #ffd60a;
+            --legs: #ffd60a;
+            --sculpt: #ffd60a;
+            --cardio: #ffd60a;
+            --danger: #ef4444;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
             padding: 0 0 90px 0;
-            line-height: 1.5;
+            line-height: 1.45;
+            font-weight: 600;
+            -webkit-font-smoothing: antialiased;
         }
 
         .container { padding: 16px 15px 0 15px; }
@@ -64,7 +66,8 @@
             gap: 12px;
             padding: 12px 16px;
             padding-top: max(12px, env(safe-area-inset-top, 12px));
-            background: rgba(20, 24, 31, 0.78);
+            background: rgba(0, 0, 0, 0.85);
+            border-bottom: 1px solid rgba(255,214,10,0.18);
             -webkit-backdrop-filter: saturate(160%) blur(14px);
             backdrop-filter: saturate(160%) blur(14px);
         }
@@ -74,7 +77,7 @@
             right: 0;
             bottom: 0;
             height: 2px;
-            background: rgba(125,154,168,0.12);
+            background: rgba(255,214,10,0.12);
             overflow: hidden;
         }
         .topbar-progress-fill {
@@ -88,21 +91,22 @@
             align-items: center;
             gap: 8px;
             margin: 0;
-            font-size: 1rem;
+            font-size: 1.05rem;
             font-weight: 900;
             color: var(--accent);
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 2.5px;
+            text-shadow: 0 0 12px rgba(255,214,10,0.35);
         }
         .topbar-title-icon {
             font-size: 1.3rem;
-            filter: drop-shadow(0 0 6px rgba(125,154,168,0.35));
+            filter: drop-shadow(0 0 8px rgba(255,214,10,0.6));
         }
 
         /* Profile card */
         .profile-card {
-            background: linear-gradient(135deg, rgba(125,154,168,0.10), rgba(148,137,168,0.05));
-            border: 1px solid rgba(125,154,168,0.18);
+            background: linear-gradient(135deg, rgba(255,214,10,0.08), rgba(255,214,10,0.02));
+            border: 1px solid rgba(255,214,10,0.22);
             border-radius: 16px;
             padding: 14px 16px;
             margin-bottom: 20px;
@@ -124,14 +128,15 @@
             font-size: 0.65rem;
             color: var(--subtext);
             text-transform: uppercase;
-            letter-spacing: 1.2px;
-            font-weight: 700;
+            letter-spacing: 1.4px;
+            font-weight: 800;
         }
         .stat-value {
-            font-size: 0.95rem;
+            font-size: 1rem;
             color: var(--text);
-            font-weight: 800;
+            font-weight: 900;
             white-space: nowrap;
+            letter-spacing: 0.3px;
         }
         .week-info {
             text-align: center;
@@ -147,7 +152,7 @@
         .today-badge {
             display: inline-block;
             background: var(--accent);
-            color: #14181f;
+            color: #000000;
             font-size: 0.62rem;
             font-weight: 900;
             padding: 3px 7px;
@@ -171,11 +176,11 @@
             justify-content: space-between;
             gap: 12px;
             margin-bottom: 15px;
-            border-bottom: 1px solid #334155;
+            border-bottom: 1px solid #262626;
             padding-bottom: 8px;
         }
 
-        .day-title { font-weight: 800; font-size: 1.2rem; }
+        .day-title { font-weight: 900; font-size: 1.25rem; letter-spacing: 1px; text-transform: uppercase; }
         .day-progress {
             font-size: 0.85rem;
             color: var(--subtext);
@@ -184,7 +189,7 @@
             border-radius: 12px;
             font-weight: 700;
         }
-        .day-progress.complete { background: rgba(125,157,130,0.18); color: var(--done); }
+        .day-progress.complete { background: rgba(34,197,94,0.18); color: var(--done); }
 
         .lunes { border-left: 6px solid var(--push); }
         .lunes .day-title { color: var(--push); }
@@ -217,9 +222,9 @@
             animation: justChecked 0.7s ease-out;
         }
         @keyframes justChecked {
-            0%   { box-shadow: 0 0 0 0 rgba(125,157,130,0.55); }
-            60%  { box-shadow: 0 0 0 10px rgba(125,157,130,0); }
-            100% { box-shadow: 0 0 0 0 rgba(125,157,130,0); }
+            0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
+            60%  { box-shadow: 0 0 0 10px rgba(34,197,94,0); }
+            100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
         }
 
         .check-row { display: flex; align-items: center; gap: 8px; }
@@ -243,8 +248,9 @@
 
         .ex-name {
             font-size: 1.05rem;
-            font-weight: 700;
+            font-weight: 800;
             color: var(--accent);
+            letter-spacing: 0.3px;
         }
 
         .ex-search {
@@ -254,13 +260,13 @@
             width: 36px;
             height: 36px;
             border-radius: 8px;
-            background: rgba(125,154,168,0.15);
+            background: rgba(255,214,10,0.15);
             color: var(--accent);
             text-decoration: none;
             font-size: 1rem;
             flex-shrink: 0;
         }
-        .ex-search:active { background: rgba(125,154,168,0.3); }
+        .ex-search:active { background: rgba(255,214,10,0.32); }
 
         .exercise-meta {
             display: flex;
@@ -327,7 +333,7 @@
             min-width: 0;
             background: rgba(255,255,255,0.06);
             color: var(--text);
-            border: 1px solid #334155;
+            border: 1px solid #262626;
             border-radius: 8px;
             padding: 8px 10px;
             font-size: 1rem;
@@ -350,16 +356,18 @@
 
         .btn-rest {
             width: 100%;
-            background: rgba(125,154,168,0.15);
+            background: rgba(255,214,10,0.15);
             color: var(--accent);
             border: 1px solid var(--accent);
             padding: 10px;
             border-radius: 8px;
-            font-weight: 700;
+            font-weight: 800;
             font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
             cursor: pointer;
         }
-        .btn-rest:active { background: rgba(125,154,168,0.3); }
+        .btn-rest:active { background: rgba(255,214,10,0.32); }
 
         .cardio-table {
             width: 100%;
@@ -372,15 +380,15 @@
         .cardio-table th, .cardio-table td {
             padding: 12px;
             text-align: center;
-            border-bottom: 1px solid #334155;
+            border-bottom: 1px solid #262626;
         }
-        .cardio-table th { background: #14181f; color: var(--cardio); font-weight: 800; }
+        .cardio-table th { background: #000000; color: var(--cardio); font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }
         .cardio-table td { background: rgba(255,255,255,0.02); }
 
         .btn-reset {
-            background: rgba(185,115,115,0.15);
+            background: rgba(239,68,68,0.15);
             color: var(--danger);
-            border: 1px solid rgba(185,115,115,0.35);
+            border: 1px solid rgba(239,68,68,0.4);
             padding: 8px 12px;
             border-radius: 12px;
             font-weight: 800;
@@ -393,7 +401,7 @@
             letter-spacing: 0.5px;
             flex-shrink: 0;
         }
-        .btn-reset:active { background: rgba(185,115,115,0.3); transform: scale(0.96); }
+        .btn-reset:active { background: rgba(239,68,68,0.32); transform: scale(0.96); }
 
         .hidden { display: none !important; }
 
@@ -443,7 +451,7 @@
         }
         .rest-btn:active { background: rgba(255,255,255,0.18); }
         .rest-cancel {
-            background: rgba(185,115,115,0.18);
+            background: rgba(239,68,68,0.2);
             color: var(--danger);
             border: none;
             width: 34px;
@@ -453,7 +461,7 @@
             font-size: 0.9rem;
             cursor: pointer;
         }
-        .rest-cancel:active { background: rgba(185,115,115,0.35); }
+        .rest-cancel:active { background: rgba(239,68,68,0.38); }
         .rest-pill.done {
             background: var(--done);
             border-color: var(--done);
