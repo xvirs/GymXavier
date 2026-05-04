@@ -520,7 +520,7 @@
         // ========== DATOS DE LA RUTINA ==========
         const ROUTINE = [
             { id: 'lunes', cls: 'lunes', dow: 1, titulo: 'LUNES: EMPUJE', ejercicios: [
-                { id: 'l1', nombre: 'Press Pecho Sentado',        series: 4, reps: 10, q: 'press de pecho sentado maquina' },
+                { id: 'l1', nombre: 'Press Banca',                 series: 4, reps: 10, q: 'press de banca con barra pecho' },
                 { id: 'l4', nombre: 'Press Inclinado Mancuernas', series: 4, reps: 10, q: 'press inclinado con mancuernas pecho superior' },
                 { id: 'l2', nombre: 'Vuelos Laterales',           series: 4, reps: 10, q: 'vuelos laterales mancuernas' },
                 { id: 'l3', nombre: 'Tríceps Polea',              series: 4, reps: 10, q: 'extension triceps polea alta' }
@@ -945,7 +945,7 @@
         // ========== SERVICE WORKER ==========
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
+                navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
                     .then(reg => console.log('SW registrado:', reg.scope))
                     .catch(err => console.log('SW falló:', err));
             });

@@ -1,6 +1,7 @@
 // Gym Pro Tracker - Service Worker
-// Bumpea la versión cuando cambies archivos para forzar refresh del cache
-const CACHE_VERSION = 'gym-tracker-v6';
+// Bumpea la versión cuando cambies assets cacheados para limpiar caches viejos.
+// La estrategia es network-first para HTML, así los cambios se ven sin hacks.
+const CACHE_VERSION = 'gym-tracker-v7';
 
 const URLS_TO_CACHE = [
   './',
@@ -20,7 +21,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activación: limpia caches viejos
+// Activación: limpia caches viejos y toma control inmediato
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -33,22 +34,32 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: cache-first, fallback a red
-// (Las búsquedas de Google Images siempre van por red porque no están cacheadas)
+// Fetch:
+//   - HTML / navegación → network-first (siempre vemos la última versión online)
+//   - Assets estáticos    → cache-first (rápido + offline-capable)
 self.addEventListener('fetch', (event) => {
-  // Solo cacheamos GET requests del mismo origen
-  if (event.request.method !== 'GET') return;
+  const req = event.request;
+  if (req.method !== 'GET') return;
 
+  const accept = req.headers.get('accept') || '';
+  const isHTML = req.mode === 'navigate' || accept.includes('text/html');
+
+  if (isHTML) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          // Refrescamos el cache con la última versión en background
+          const copy = res.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put('./index.html', copy)).catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // Assets: cache-first
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-
-      return fetch(event.request).catch(() => {
-        // Si falla la red y es una navegación, devolvemos el index cacheado
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
-      });
-    })
+    caches.match(req).then((cached) => cached || fetch(req).catch(() => undefined))
   );
 });
