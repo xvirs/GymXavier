@@ -67,7 +67,21 @@
             background: rgba(15, 23, 42, 0.78);
             -webkit-backdrop-filter: saturate(160%) blur(14px);
             backdrop-filter: saturate(160%) blur(14px);
-            border-bottom: 1px solid rgba(56, 189, 248, 0.18);
+        }
+        .topbar-progress-track {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 2px;
+            background: rgba(56,189,248,0.12);
+            overflow: hidden;
+        }
+        .topbar-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent), var(--done));
+            transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
         }
         .topbar-title {
             display: flex;
@@ -190,13 +204,22 @@
             margin-bottom: 12px;
             padding: 12px 14px;
             border-radius: 12px;
-            transition: opacity 0.3s, border-color 0.2s;
+            transition: opacity 0.35s ease, border-color 0.3s ease, transform 0.25s ease;
             border: 1px solid transparent;
         }
 
         .exercise-item.checked {
             opacity: 0.55;
             border-color: var(--done);
+            transform: scale(0.985);
+        }
+        .exercise-item.just-checked {
+            animation: justChecked 0.7s ease-out;
+        }
+        @keyframes justChecked {
+            0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.55); }
+            60%  { box-shadow: 0 0 0 10px rgba(16,185,129,0); }
+            100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
         }
 
         .check-row { display: flex; align-items: center; gap: 8px; }
@@ -455,6 +478,9 @@
             <span aria-hidden="true">🔄</span>
             <span>Reset</span>
         </button>
+        <div class="topbar-progress-track" aria-hidden="true">
+            <div class="topbar-progress-fill" id="topbar-progress"></div>
+        </div>
     </header>
 
     <main class="container">
@@ -737,6 +763,21 @@
             badge.classList.toggle('complete', done === total);
         }
 
+        function updateGlobalProgress() {
+            let total = 0, done = 0;
+            for (const day of ROUTINE) {
+                for (const ex of day.ejercicios) {
+                    total++;
+                    if (getEx(ex.id).done) done++;
+                }
+            }
+            const pct = total > 0 ? (done / total) * 100 : 0;
+            const fill = document.getElementById('topbar-progress');
+            if (fill) fill.style.width = pct + '%';
+            const wi = document.getElementById('week-info');
+            if (wi) wi.textContent = `Semana del ${fmtFecha(state.weekStart)} · ${done}/${total} completados`;
+        }
+
         // ========== EVENTOS ==========
         container.addEventListener('change', (e) => {
             if (!e.target.classList.contains('ex-check')) return;
@@ -744,7 +785,15 @@
             const id = item.dataset.id;
             getEx(id).done = e.target.checked;
             item.classList.toggle('checked', e.target.checked);
+            if (e.target.checked) {
+                item.classList.remove('just-checked');
+                // Reflow para reiniciar la animación si se chequea de nuevo rápido
+                void item.offsetWidth;
+                item.classList.add('just-checked');
+                setTimeout(() => item.classList.remove('just-checked'), 700);
+            }
             updateDayProgress(id);
+            updateGlobalProgress();
             saveState();
         });
 
@@ -796,6 +845,7 @@
             if (confirm('¿Reiniciar el progreso de esta semana?\n(Se guardará en el historial para comparar pesos)')) {
                 archiveAndReset();
                 render();
+                updateGlobalProgress();
             }
         });
 
@@ -870,11 +920,27 @@
             paintRest();
         });
 
-        // ========== INFO DE SEMANA ==========
-        document.getElementById('week-info').textContent = `Semana del ${fmtFecha(state.weekStart)}`;
+        // ========== AUTO-SCROLL AL PRIMER PENDIENTE DE HOY ==========
+        function scrollToTodayFirst() {
+            const todayDow = new Date().getDay();
+            const day = ROUTINE.find(d => d.dow === todayDow);
+            if (!day) return; // viernes/finde: no es día de rutina
+            const pending = day.ejercicios.find(e => !getEx(e.id).done);
+            if (!pending) return; // ya está todo completo
+            const item = container.querySelector(`[data-id="${pending.id}"]`);
+            if (!item) return;
+            // Esperamos un tick para que el layout (incluyendo el sticky topbar) esté listo
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 250);
+            });
+        }
 
         // ========== INICIO ==========
         render();
+        updateGlobalProgress();
+        scrollToTodayFirst();
 
         // ========== SERVICE WORKER ==========
         if ('serviceWorker' in navigator) {
