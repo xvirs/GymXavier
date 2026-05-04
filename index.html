@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="GymPro">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#14181f">
 
     <!-- Open Graph -->
     <meta property="og:title" content="Gym Pro Tracker">
@@ -26,18 +26,18 @@
 
     <style>
         :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --accent: #38bdf8;
-            --text: #f1f5f9;
-            --subtext: #94a3b8;
-            --done: #10b981;
-            --push: #f87171;
-            --pull: #60a5fa;
-            --legs: #fbbf24;
-            --sculpt: #a78bfa;
-            --cardio: #ec4899;
-            --danger: #ef4444;
+            --bg: #14181f;
+            --card: #1d232c;
+            --accent: #7d9aa8;
+            --text: #dde2e8;
+            --subtext: #8590a0;
+            --done: #7d9d82;
+            --push: #b88478;
+            --pull: #6f8eb0;
+            --legs: #c2a16b;
+            --sculpt: #9489a8;
+            --cardio: #b7849a;
+            --danger: #b97373;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -64,7 +64,7 @@
             gap: 12px;
             padding: 12px 16px;
             padding-top: max(12px, env(safe-area-inset-top, 12px));
-            background: rgba(15, 23, 42, 0.78);
+            background: rgba(20, 24, 31, 0.78);
             -webkit-backdrop-filter: saturate(160%) blur(14px);
             backdrop-filter: saturate(160%) blur(14px);
         }
@@ -74,7 +74,7 @@
             right: 0;
             bottom: 0;
             height: 2px;
-            background: rgba(56,189,248,0.12);
+            background: rgba(125,154,168,0.12);
             overflow: hidden;
         }
         .topbar-progress-fill {
@@ -96,13 +96,13 @@
         }
         .topbar-title-icon {
             font-size: 1.3rem;
-            filter: drop-shadow(0 0 8px rgba(56,189,248,0.45));
+            filter: drop-shadow(0 0 6px rgba(125,154,168,0.35));
         }
 
         /* Profile card */
         .profile-card {
-            background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(167,139,250,0.05));
-            border: 1px solid rgba(56,189,248,0.18);
+            background: linear-gradient(135deg, rgba(125,154,168,0.10), rgba(148,137,168,0.05));
+            border: 1px solid rgba(125,154,168,0.18);
             border-radius: 16px;
             padding: 14px 16px;
             margin-bottom: 20px;
@@ -147,7 +147,7 @@
         .today-badge {
             display: inline-block;
             background: var(--accent);
-            color: #0f172a;
+            color: #14181f;
             font-size: 0.62rem;
             font-weight: 900;
             padding: 3px 7px;
@@ -184,7 +184,7 @@
             border-radius: 12px;
             font-weight: 700;
         }
-        .day-progress.complete { background: rgba(16,185,129,0.18); color: var(--done); }
+        .day-progress.complete { background: rgba(125,157,130,0.18); color: var(--done); }
 
         .lunes { border-left: 6px solid var(--push); }
         .lunes .day-title { color: var(--push); }
@@ -217,9 +217,9 @@
             animation: justChecked 0.7s ease-out;
         }
         @keyframes justChecked {
-            0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.55); }
-            60%  { box-shadow: 0 0 0 10px rgba(16,185,129,0); }
-            100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+            0%   { box-shadow: 0 0 0 0 rgba(125,157,130,0.55); }
+            60%  { box-shadow: 0 0 0 10px rgba(125,157,130,0); }
+            100% { box-shadow: 0 0 0 0 rgba(125,157,130,0); }
         }
 
         .check-row { display: flex; align-items: center; gap: 8px; }
@@ -254,13 +254,13 @@
             width: 36px;
             height: 36px;
             border-radius: 8px;
-            background: rgba(56,189,248,0.15);
+            background: rgba(125,154,168,0.15);
             color: var(--accent);
             text-decoration: none;
             font-size: 1rem;
             flex-shrink: 0;
         }
-        .ex-search:active { background: rgba(56,189,248,0.3); }
+        .ex-search:active { background: rgba(125,154,168,0.3); }
 
         .exercise-meta {
             display: flex;
@@ -350,7 +350,7 @@
 
         .btn-rest {
             width: 100%;
-            background: rgba(56,189,248,0.15);
+            background: rgba(125,154,168,0.15);
             color: var(--accent);
             border: 1px solid var(--accent);
             padding: 10px;
@@ -359,7 +359,7 @@
             font-size: 0.95rem;
             cursor: pointer;
         }
-        .btn-rest:active { background: rgba(56,189,248,0.3); }
+        .btn-rest:active { background: rgba(125,154,168,0.3); }
 
         .cardio-table {
             width: 100%;
@@ -374,13 +374,13 @@
             text-align: center;
             border-bottom: 1px solid #334155;
         }
-        .cardio-table th { background: #0f172a; color: var(--cardio); font-weight: 800; }
+        .cardio-table th { background: #14181f; color: var(--cardio); font-weight: 800; }
         .cardio-table td { background: rgba(255,255,255,0.02); }
 
         .btn-reset {
-            background: rgba(239,68,68,0.15);
+            background: rgba(185,115,115,0.15);
             color: var(--danger);
-            border: 1px solid rgba(239,68,68,0.35);
+            border: 1px solid rgba(185,115,115,0.35);
             padding: 8px 12px;
             border-radius: 12px;
             font-weight: 800;
@@ -393,7 +393,7 @@
             letter-spacing: 0.5px;
             flex-shrink: 0;
         }
-        .btn-reset:active { background: rgba(239,68,68,0.3); transform: scale(0.96); }
+        .btn-reset:active { background: rgba(185,115,115,0.3); transform: scale(0.96); }
 
         .hidden { display: none !important; }
 
@@ -443,7 +443,7 @@
         }
         .rest-btn:active { background: rgba(255,255,255,0.18); }
         .rest-cancel {
-            background: rgba(239,68,68,0.18);
+            background: rgba(185,115,115,0.18);
             color: var(--danger);
             border: none;
             width: 34px;
@@ -453,7 +453,7 @@
             font-size: 0.9rem;
             cursor: pointer;
         }
-        .rest-cancel:active { background: rgba(239,68,68,0.35); }
+        .rest-cancel:active { background: rgba(185,115,115,0.35); }
         .rest-pill.done {
             background: var(--done);
             border-color: var(--done);
