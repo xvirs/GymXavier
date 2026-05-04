@@ -47,13 +47,101 @@
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 15px 15px 110px 15px;
+            padding: 0 0 90px 0;
             line-height: 1.5;
         }
 
-        h1 { text-align: center; font-size: 1.5rem; color: var(--accent); margin: 10px 0 5px 0; text-transform: uppercase; letter-spacing: 1px; }
-        .stats { text-align: center; color: var(--subtext); font-size: 0.85rem; margin-bottom: 4px; }
-        .week-info { text-align: center; color: var(--subtext); font-size: 0.8rem; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #334155; }
+        .container { padding: 16px 15px 0 15px; }
+
+        /* Top bar (sticky) */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+            padding-top: max(12px, env(safe-area-inset-top, 12px));
+            background: rgba(15, 23, 42, 0.78);
+            -webkit-backdrop-filter: saturate(160%) blur(14px);
+            backdrop-filter: saturate(160%) blur(14px);
+            border-bottom: 1px solid rgba(56, 189, 248, 0.18);
+        }
+        .topbar-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 900;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .topbar-title-icon {
+            font-size: 1.3rem;
+            filter: drop-shadow(0 0 8px rgba(56,189,248,0.45));
+        }
+
+        /* Profile card */
+        .profile-card {
+            background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(167,139,250,0.05));
+            border: 1px solid rgba(56,189,248,0.18);
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+        }
+        .profile-stats {
+            display: flex;
+            justify-content: space-around;
+            gap: 8px;
+        }
+        .profile-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            flex: 1;
+            min-width: 0;
+        }
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--subtext);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-weight: 700;
+        }
+        .stat-value {
+            font-size: 0.95rem;
+            color: var(--text);
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .week-info {
+            text-align: center;
+            color: var(--subtext);
+            font-size: 0.78rem;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            padding-top: 10px;
+            margin-top: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        /* "HOY" badge for current weekday */
+        .today-badge {
+            display: inline-block;
+            background: var(--accent);
+            color: #0f172a;
+            font-size: 0.62rem;
+            font-weight: 900;
+            padding: 3px 7px;
+            border-radius: 6px;
+            margin-right: 8px;
+            letter-spacing: 1.2px;
+            vertical-align: 2px;
+        }
 
         .day-section {
             background: var(--card);
@@ -267,31 +355,29 @@
         .cardio-table td { background: rgba(255,255,255,0.02); }
 
         .btn-reset {
-            position: fixed;
-            bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--danger);
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 50px;
+            background: rgba(239,68,68,0.15);
+            color: var(--danger);
+            border: 1px solid rgba(239,68,68,0.35);
+            padding: 8px 12px;
+            border-radius: 12px;
             font-weight: 800;
-            width: 85%;
-            max-width: 400px;
-            z-index: 100;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            font-size: 0.95rem;
+            font-size: 0.78rem;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
         }
-        .btn-reset:active { background: #dc2626; transform: translateX(-50%) scale(0.95); }
+        .btn-reset:active { background: rgba(239,68,68,0.3); transform: scale(0.96); }
 
         .hidden { display: none !important; }
 
         /* Floating rest timer pill */
         .rest-pill {
             position: fixed;
-            bottom: 95px;
+            bottom: max(20px, env(safe-area-inset-bottom, 20px));
             left: 50%;
             transform: translateX(-50%);
             background: var(--card);
@@ -360,13 +446,38 @@
     </style>
 </head>
 <body>
-    <h1>GYM PRO TRACKER 🚀</h1>
-    <div class="stats">PERFIL: 1.75m | 83kg | META: DEFINICIÓN</div>
-    <div class="week-info" id="week-info"></div>
+    <header class="topbar">
+        <h1 class="topbar-title">
+            <span class="topbar-title-icon" aria-hidden="true">🏋</span>
+            <span>Gym Pro</span>
+        </h1>
+        <button class="btn-reset" id="btn-reset" type="button">
+            <span aria-hidden="true">🔄</span>
+            <span>Reset</span>
+        </button>
+    </header>
 
-    <div id="routine-container"></div>
+    <main class="container">
+        <section class="profile-card">
+            <div class="profile-stats">
+                <div class="profile-stat">
+                    <span class="stat-label">Altura</span>
+                    <span class="stat-value">1.75m</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="stat-label">Peso</span>
+                    <span class="stat-value">83kg</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="stat-label">Meta</span>
+                    <span class="stat-value">Definición</span>
+                </div>
+            </div>
+            <div class="week-info" id="week-info"></div>
+        </section>
 
-    <button class="btn-reset" id="btn-reset">🔄 REINICIAR SEMANA</button>
+        <div id="routine-container"></div>
+    </main>
 
     <div id="rest-pill" class="rest-pill hidden" role="status" aria-live="polite" aria-label="Timer de descanso">
         <span class="rest-icon" aria-hidden="true">⏱</span>
@@ -530,15 +641,17 @@
         function renderDay(day, todayDow) {
             const total = day.ejercicios.length;
             const done  = day.ejercicios.filter(e => getEx(e.id).done).length;
+            const isToday = day.dow === todayDow;
 
             const section = document.createElement('section');
-            section.className = `day-section ${day.cls}` + (day.dow === todayDow ? ' today' : '');
+            section.className = `day-section ${day.cls}` + (isToday ? ' today' : '');
             section.dataset.dayId = day.id;
 
             const header = document.createElement('div');
             header.className = 'day-header';
+            const todayBadge = isToday ? '<span class="today-badge">HOY</span>' : '';
             header.innerHTML = `
-                <span class="day-title">${day.titulo}</span>
+                <span class="day-title">${todayBadge}${day.titulo}</span>
                 <span class="day-progress${done === total ? ' complete' : ''}">${done}/${total}</span>
             `;
             section.appendChild(header);
