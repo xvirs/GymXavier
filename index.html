@@ -426,6 +426,41 @@
 
         .series-x { color: var(--subtext); font-weight: 700; }
 
+        .series-diff {
+            font-size: 0.7rem;
+            font-weight: 900;
+            color: #4ade80;
+            background: rgba(74,222,128,0.12);
+            border: 1px solid rgba(74,222,128,0.45);
+            padding: 4px 7px;
+            border-radius: 2px;
+            white-space: nowrap;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+            animation: diffPop 0.3s ease-out;
+        }
+        .series-diff:empty { display: none; }
+        @keyframes diffPop {
+            from { transform: scale(0.6); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+        }
+
+        .btn-copy-last {
+            width: 100%;
+            background: transparent;
+            color: var(--accent);
+            border: 1px dashed rgba(255,205,17,0.55);
+            padding: 9px 10px;
+            border-radius: 2px;
+            font-weight: 800;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-copy-last:active { background: rgba(255,205,17,0.12); }
+
         .btn-rest {
             width: 100%;
             background: var(--accent);
@@ -736,6 +771,75 @@
             return state.exercises[id];
         }
 
+        function findExerciseDef(id) {
+            for (const day of ROUTINE) {
+                const ex = day.ejercicios.find(e => e.id === id);
+                if (ex) return ex;
+            }
+            return null;
+        }
+
+        function isAllSeriesFilled(exDef, exState) {
+            if (!exDef || !exState || !exState.series) return false;
+            for (let i = 0; i < exDef.series; i++) {
+                const s = exState.series[i];
+                if (!s) return false;
+                const p = Number(s.peso), r = Number(s.reps);
+                if (!Number.isFinite(p) || p <= 0) return false;
+                if (!Number.isFinite(r) || r <= 0) return false;
+            }
+            return true;
+        }
+
+        function getLastSession(exId) {
+            for (const week of state.history) {
+                const ex = week.exercises && week.exercises[exId];
+                if (!ex || !ex.series) continue;
+                const filled = ex.series.filter(s => s && (s.peso || s.reps));
+                if (!filled.length) continue;
+                return { weekStart: week.weekStart, series: ex.series };
+            }
+            return null;
+        }
+
+        function formatDelta(d) {
+            if (Number.isInteger(d)) return String(d);
+            return d.toFixed(1).replace(/\.0$/, '');
+        }
+
+        function computeSeriesDiff(curPeso, curReps, prev) {
+            if (!prev) return null;
+            const cP = Number(curPeso), cR = Number(curReps);
+            const pP = Number(prev.peso), pR = Number(prev.reps);
+            if (!Number.isFinite(cP) || cP <= 0) return null;
+            if (!Number.isFinite(pP) || pP <= 0) return null;
+            if (cP > pP) return { text: `+${formatDelta(cP - pP)}kg` };
+            if (cP === pP && Number.isFinite(cR) && Number.isFinite(pR) && cR > pR) {
+                return { text: `+${cR - pR} reps` };
+            }
+            return null;
+        }
+
+        function updateSingleSeriesDiff(item, idx) {
+            const span = item.querySelector(`.series-diff[data-idx="${idx}"]`);
+            if (!span) return;
+            const exId = item.dataset.id;
+            const ex = getEx(exId);
+            const last = getLastSession(exId);
+            if (!last) { span.textContent = ''; return; }
+            const cur = ex.series[idx] || {};
+            const prev = last.series[idx] || null;
+            const diff = computeSeriesDiff(cur.peso, cur.reps, prev);
+            const next = diff ? diff.text : '';
+            if (span.textContent !== next) span.textContent = next;
+        }
+
+        function updateAllSeriesDiffs(item) {
+            const exDef = findExerciseDef(item.dataset.id);
+            if (!exDef) return;
+            for (let i = 0; i < exDef.series; i++) updateSingleSeriesDiff(item, i);
+        }
+
         function getBestPrevious(exId) {
             for (const week of state.history) {
                 const ex = week.exercises && week.exercises[exId];
@@ -770,6 +874,7 @@
                 container.appendChild(renderDay(day, todayDow));
             }
             container.appendChild(renderCardio());
+            container.querySelectorAll('.exercise-item').forEach(updateAllSeriesDiffs);
         }
 
         function renderDay(day, todayDow) {
@@ -823,6 +928,11 @@
                 ? `<div class="last-record">📈 Mejor anterior (${fmtFecha(prev.weekStart)}): <strong>${prev.best.peso ?? '-'}kg × ${prev.best.reps ?? '-'}</strong></div>`
                 : `<div class="last-record">📈 Sin registros previos — ¡arrancá!</div>`;
 
+            const lastSession = getLastSession(ex.id);
+            const copyHTML = lastSession
+                ? `<button class="btn-copy-last" type="button">📋 Copiar pesos del ${fmtFecha(lastSession.weekStart)}</button>`
+                : '';
+
             let series = '';
             for (let i = 0; i < ex.series; i++) {
                 const s = exState.series[i] || {};
@@ -832,6 +942,7 @@
                         <input type="number" class="serie-peso" data-idx="${i}" placeholder="kg" inputmode="decimal" step="0.5" min="0" value="${s.peso ?? ''}" aria-label="Peso serie ${i+1}">
                         <span class="series-x">×</span>
                         <input type="number" class="serie-reps" data-idx="${i}" placeholder="reps" inputmode="numeric" min="0" value="${s.reps ?? ''}" aria-label="Reps serie ${i+1}">
+                        <span class="series-diff" data-idx="${i}"></span>
                     </div>
                 `;
             }
@@ -850,6 +961,7 @@
                 </div>
                 <div class="exercise-detail hidden">
                     ${prevHTML}
+                    ${copyHTML}
                     <div class="series-grid">${series}</div>
                     <button class="btn-rest" type="button" data-seconds="90">⏱ Descanso 90s</button>
                 </div>
@@ -919,17 +1031,65 @@
             saveState();
         });
 
+        function autoCheckExercise(item) {
+            const id = item.dataset.id;
+            const ex = getEx(id);
+            ex.done = true;
+            item.classList.add('checked');
+            const checkbox = item.querySelector('.ex-check');
+            if (checkbox) checkbox.checked = true;
+            item.classList.remove('just-checked');
+            void item.offsetWidth;
+            item.classList.add('just-checked');
+            setTimeout(() => item.classList.remove('just-checked'), 700);
+            updateDayProgress(id);
+            updateGlobalProgress();
+        }
+
+        function copyLastSession(exId) {
+            const last = getLastSession(exId);
+            if (!last) return;
+            const exDef = findExerciseDef(exId);
+            if (!exDef) return;
+            const ex = getEx(exId);
+            const item = container.querySelector(`[data-id="${exId}"]`);
+            if (!item) return;
+            for (let i = 0; i < exDef.series; i++) {
+                const prev = last.series[i];
+                if (!prev) continue;
+                if (!ex.series[i]) ex.series[i] = {};
+                if (prev.peso != null) ex.series[i].peso = prev.peso;
+                if (prev.reps != null) ex.series[i].reps = prev.reps;
+                const pesoInput = item.querySelector(`.serie-peso[data-idx="${i}"]`);
+                const repsInput = item.querySelector(`.serie-reps[data-idx="${i}"]`);
+                if (pesoInput && prev.peso != null) pesoInput.value = prev.peso;
+                if (repsInput && prev.reps != null) repsInput.value = prev.reps;
+            }
+            updateAllSeriesDiffs(item);
+            saveState();
+        }
+
         container.addEventListener('input', (e) => {
             const isPeso = e.target.classList.contains('serie-peso');
             const isReps = e.target.classList.contains('serie-reps');
             if (!isPeso && !isReps) return;
             const item = e.target.closest('.exercise-item');
             const ex = getEx(item.dataset.id);
+            const exDef = findExerciseDef(item.dataset.id);
             const idx = parseInt(e.target.dataset.idx, 10);
+            const wasComplete = isAllSeriesFilled(exDef, ex);
+
             if (!ex.series[idx]) ex.series[idx] = {};
             const raw = e.target.value;
             const val = raw === '' ? null : parseFloat(raw);
             ex.series[idx][isPeso ? 'peso' : 'reps'] = (Number.isFinite(val) ? val : null);
+
+            const nowComplete = isAllSeriesFilled(exDef, ex);
+            if (!wasComplete && nowComplete && !ex.done) {
+                autoCheckExercise(item);
+            }
+
+            updateSingleSeriesDiff(item, idx);
             saveState();
         });
 
@@ -981,6 +1141,13 @@
             // Botón de descanso dentro del detalle
             if (e.target.classList.contains('btn-rest')) {
                 startRest(parseInt(e.target.dataset.seconds, 10) || 90);
+                return;
+            }
+
+            // Botón de copiar última sesión
+            if (e.target.classList.contains('btn-copy-last')) {
+                const item = e.target.closest('.exercise-item');
+                if (item) copyLastSession(item.dataset.id);
                 return;
             }
 
