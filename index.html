@@ -240,6 +240,31 @@
             border-color: var(--accent);
         }
 
+        .day-header[role="button"] { cursor: pointer; user-select: none; }
+        .day-header[role="button"]:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+        .day-header-right {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .day-chevron {
+            display: inline-block;
+            color: var(--accent);
+            font-size: 0.9rem;
+            font-weight: 900;
+            transition: transform 0.25s ease;
+        }
+        .day-header[aria-expanded="true"] .day-chevron { transform: rotate(180deg); }
+        .day-section.collapsed .day-header {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        .day-section.collapsed { padding-bottom: 14px; margin-bottom: 12px; }
+
         .exercise-item {
             background: #0a0a0a;
             margin-bottom: 12px;
@@ -442,24 +467,35 @@
         }
         .cardio-table td { background: #161616; }
 
+        .reset-section {
+            margin-top: 28px;
+            padding: 16px 8px 8px 8px;
+            text-align: center;
+        }
         .btn-reset {
-            background: #0a0a0a;
-            color: var(--accent);
-            border: 2px solid var(--accent);
-            padding: 8px 14px;
+            background: transparent;
+            color: var(--danger);
+            border: 2px dashed rgba(230,57,70,0.55);
+            padding: 12px 22px;
             border-radius: 2px;
             font-weight: 900;
-            font-size: 0.78rem;
+            font-size: 0.82rem;
             cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
             text-transform: uppercase;
             letter-spacing: 1.5px;
-            flex-shrink: 0;
-            box-shadow: 2px 2px 0 var(--accent-dark);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
-        .btn-reset:active { background: var(--accent); color: #0a0a0a; transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--accent-dark); }
+        .btn-reset:active { background: rgba(230,57,70,0.12); }
+        .reset-hint {
+            margin: 12px 0 0 0;
+            color: var(--subtext);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-weight: 700;
+        }
 
         .hidden { display: none !important; }
 
@@ -542,10 +578,6 @@
             <span class="topbar-title-icon" aria-hidden="true">🏋</span>
             <span>Gym Pro</span>
         </h1>
-        <button class="btn-reset" id="btn-reset" type="button">
-            <span aria-hidden="true">🔄</span>
-            <span>Reset</span>
-        </button>
         <div class="topbar-progress-track" aria-hidden="true">
             <div class="topbar-progress-fill" id="topbar-progress"></div>
         </div>
@@ -571,6 +603,14 @@
         </section>
 
         <div id="routine-container"></div>
+
+        <section class="reset-section">
+            <button class="btn-reset" id="btn-reset" type="button">
+                <span aria-hidden="true">🔄</span>
+                <span>Reiniciar semana</span>
+            </button>
+            <p class="reset-hint">Se guarda en el historial para comparar pesos.</p>
+        </section>
     </main>
 
     <div id="rest-pill" class="rest-pill hidden" role="status" aria-live="polite" aria-label="Timer de descanso">
@@ -738,21 +778,35 @@
             const isToday = day.dow === todayDow;
 
             const section = document.createElement('section');
-            section.className = `day-section ${day.cls}` + (isToday ? ' today' : '');
+            section.className = `day-section ${day.cls}` + (isToday ? ' today' : ' collapsed');
             section.dataset.dayId = day.id;
 
             const header = document.createElement('div');
             header.className = 'day-header';
             const todayBadge = isToday ? '<span class="today-badge">HOY</span>' : '';
+            const chevron = isToday ? '' : '<span class="day-chevron" aria-hidden="true">▾</span>';
+            if (!isToday) {
+                header.setAttribute('role', 'button');
+                header.setAttribute('tabindex', '0');
+                header.setAttribute('aria-expanded', 'false');
+                header.setAttribute('aria-controls', `day-content-${day.id}`);
+            }
             header.innerHTML = `
                 <span class="day-title">${todayBadge}${day.titulo}</span>
-                <span class="day-progress${done === total ? ' complete' : ''}">${done}/${total}</span>
+                <span class="day-header-right">
+                    <span class="day-progress${done === total ? ' complete' : ''}">${done}/${total}</span>
+                    ${chevron}
+                </span>
             `;
             section.appendChild(header);
 
+            const content = document.createElement('div');
+            content.className = 'day-content' + (isToday ? '' : ' hidden');
+            content.id = `day-content-${day.id}`;
             for (const ex of day.ejercicios) {
-                section.appendChild(renderExercise(ex));
+                content.appendChild(renderExercise(ex));
             }
+            section.appendChild(content);
             return section;
         }
 
@@ -879,33 +933,72 @@
             saveState();
         });
 
+        function toggleExerciseExpand(item, forceOpen) {
+            const detail = item.querySelector('.exercise-detail');
+            const btn = item.querySelector('.btn-expand');
+            const isHidden = detail.classList.contains('hidden');
+            const willOpen = typeof forceOpen === 'boolean' ? forceOpen : isHidden;
+            if (willOpen === !isHidden) return; // ya en el estado deseado
+
+            if (willOpen) {
+                container.querySelectorAll('.exercise-detail:not(.hidden)').forEach(d => {
+                    if (d === detail) return;
+                    d.classList.add('hidden');
+                    const otherBtn = d.parentElement.querySelector('.btn-expand');
+                    if (otherBtn) {
+                        otherBtn.textContent = '▼';
+                        otherBtn.setAttribute('aria-expanded', 'false');
+                    }
+                });
+                detail.classList.remove('hidden');
+                if (btn) { btn.textContent = '▲'; btn.setAttribute('aria-expanded', 'true'); }
+                item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                detail.classList.add('hidden');
+                if (btn) { btn.textContent = '▼'; btn.setAttribute('aria-expanded', 'false'); }
+            }
+        }
+
+        function toggleDayCollapse(section, forceOpen) {
+            const header = section.querySelector('.day-header[role="button"]');
+            const content = section.querySelector('.day-content');
+            if (!header || !content) return;
+            const isCollapsed = section.classList.contains('collapsed');
+            const willOpen = typeof forceOpen === 'boolean' ? forceOpen : isCollapsed;
+            section.classList.toggle('collapsed', !willOpen);
+            content.classList.toggle('hidden', !willOpen);
+            header.setAttribute('aria-expanded', String(willOpen));
+        }
+
         container.addEventListener('click', (e) => {
-            if (e.target.classList.contains('btn-expand')) {
-                const item = e.target.closest('.exercise-item');
-                const detail = item.querySelector('.exercise-detail');
-                const willOpen = detail.classList.contains('hidden');
+            // Colapso/expansión de día (no aplica a "hoy", que no tiene role=button)
+            const dayHeader = e.target.closest('.day-header[role="button"]');
+            if (dayHeader) {
+                toggleDayCollapse(dayHeader.parentElement);
+                return;
+            }
 
-                // Acordeón: si vamos a abrir uno, cerramos cualquier otro abierto
-                if (willOpen) {
-                    container.querySelectorAll('.exercise-detail:not(.hidden)').forEach(d => {
-                        d.classList.add('hidden');
-                        const otherBtn = d.parentElement.querySelector('.btn-expand');
-                        if (otherBtn) {
-                            otherBtn.textContent = '▼';
-                            otherBtn.setAttribute('aria-expanded', 'false');
-                        }
-                    });
-                }
-
-                detail.classList.toggle('hidden');
-                e.target.textContent = willOpen ? '▲' : '▼';
-                e.target.setAttribute('aria-expanded', String(willOpen));
-
-                if (willOpen) {
-                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
-            } else if (e.target.classList.contains('btn-rest')) {
+            // Botón de descanso dentro del detalle
+            if (e.target.classList.contains('btn-rest')) {
                 startRest(parseInt(e.target.dataset.seconds, 10) || 90);
+                return;
+            }
+
+            // Expandir ejercicio: por click en el ▼ o tap en cualquier zona no interactiva de la card
+            const item = e.target.closest('.exercise-item');
+            if (!item) return;
+            const isInteractiveZone = e.target.closest('.check-row, .exercise-detail');
+            if (e.target.classList.contains('btn-expand') || !isInteractiveZone) {
+                toggleExerciseExpand(item);
+            }
+        });
+
+        container.addEventListener('keydown', (e) => {
+            const dayHeader = e.target.closest('.day-header[role="button"]');
+            if (!dayHeader) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleDayCollapse(dayHeader.parentElement);
             }
         });
 
@@ -914,6 +1007,7 @@
                 archiveAndReset();
                 render();
                 updateGlobalProgress();
+                focusTodayFirstPending();
             }
         });
 
@@ -988,8 +1082,8 @@
             paintRest();
         });
 
-        // ========== AUTO-SCROLL AL PRIMER PENDIENTE DE HOY ==========
-        function scrollToTodayFirst() {
+        // ========== AUTO-EXPAND + SCROLL AL PRIMER PENDIENTE DE HOY ==========
+        function focusTodayFirstPending() {
             const todayDow = new Date().getDay();
             const day = ROUTINE.find(d => d.dow === todayDow);
             if (!day) return; // viernes/finde: no es día de rutina
@@ -997,7 +1091,7 @@
             if (!pending) return; // ya está todo completo
             const item = container.querySelector(`[data-id="${pending.id}"]`);
             if (!item) return;
-            // Esperamos un tick para que el layout (incluyendo el sticky topbar) esté listo
+            toggleExerciseExpand(item, true);
             requestAnimationFrame(() => {
                 setTimeout(() => {
                     item.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1008,7 +1102,7 @@
         // ========== INICIO ==========
         render();
         updateGlobalProgress();
-        scrollToTodayFirst();
+        focusTodayFirstPending();
 
         // ========== SERVICE WORKER ==========
         if ('serviceWorker' in navigator) {
