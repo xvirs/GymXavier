@@ -502,6 +502,71 @@
         }
         .cardio-table td { background: #161616; }
 
+        .data-section {
+            margin-top: 32px;
+            padding: 18px 14px;
+            border: 1px solid #2a2a2a;
+            border-radius: 4px;
+            background: #0a0a0a;
+        }
+        .data-section-title {
+            margin: 0 0 12px 0;
+            font-size: 0.78rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 900;
+            text-align: center;
+        }
+        .data-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .btn-data {
+            background: transparent;
+            color: var(--accent);
+            border: 1.5px dashed rgba(255,205,17,0.55);
+            padding: 11px 8px;
+            border-radius: 2px;
+            font-weight: 900;
+            font-size: 0.78rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn-data:active { background: rgba(255,205,17,0.12); }
+        .btn-data-secondary {
+            width: 100%;
+            background: transparent;
+            color: var(--subtext);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 9px 10px;
+            border-radius: 2px;
+            font-weight: 800;
+            font-size: 0.72rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-data-secondary:active { background: rgba(255,255,255,0.05); }
+        .data-hint {
+            margin: 12px 0 0 0;
+            color: var(--subtext);
+            font-size: 0.7rem;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            line-height: 1.45;
+            text-align: center;
+        }
+        .data-hint.is-error { color: var(--danger); }
+        .data-hint.is-success { color: #4ade80; }
+
         .reset-section {
             margin-top: 28px;
             padding: 16px 8px 8px 8px;
@@ -639,6 +704,23 @@
 
         <div id="routine-container"></div>
 
+        <section class="data-section">
+            <h2 class="data-section-title">Mi rutina</h2>
+            <div class="data-actions">
+                <button class="btn-data" id="btn-export" type="button">
+                    <span aria-hidden="true">📤</span><span>Exportar</span>
+                </button>
+                <button class="btn-data" id="btn-import" type="button">
+                    <span aria-hidden="true">📥</span><span>Importar</span>
+                </button>
+            </div>
+            <button class="btn-data-secondary" id="btn-restore-default" type="button">
+                ↺ Restaurar rutina por defecto
+            </button>
+            <input type="file" id="file-import" accept="application/json,.json" hidden>
+            <p class="data-hint" id="data-hint">Exportá tu rutina como JSON, editala y reimportala. Tu progreso e historial no se borran.</p>
+        </section>
+
         <section class="reset-section">
             <button class="btn-reset" id="btn-reset" type="button">
                 <span aria-hidden="true">🔄</span>
@@ -660,8 +742,8 @@
     (function() {
         'use strict';
 
-        // ========== DATOS DE LA RUTINA ==========
-        const ROUTINE = [
+        // ========== DATOS DE LA RUTINA (DEFAULT) ==========
+        const DEFAULT_ROUTINE = [
             { id: 'lunes', cls: 'lunes', dow: 1, titulo: 'LUNES: EMPUJE', ejercicios: [
                 { id: 'l1', nombre: 'Press Banca',                 series: 4, reps: 10, q: 'press de banca con barra pecho' },
                 { id: 'l4', nombre: 'Press Inclinado Mancuernas', series: 4, reps: 10, q: 'press inclinado con mancuernas pecho superior' },
@@ -688,7 +770,7 @@
             ]}
         ];
 
-        const CARDIO = {
+        const DEFAULT_CARDIO = {
             cls: 'cardio-section',
             titulo: '⏱️ CARDIO: CINTA (25\')',
             filas: [
@@ -698,6 +780,59 @@
                 { vel: '5 km/h',  tiempo: '3 min'  }
             ]
         };
+
+        // ========== RUTINA PERSONALIZADA (import/export) ==========
+        const ROUTINE_KEY = 'gym:routine';
+
+        function isValidRoutineData(data) {
+            if (!data || typeof data !== 'object') return false;
+            if (!Array.isArray(data.routine) || data.routine.length === 0) return false;
+            const seenIds = new Set();
+            for (const day of data.routine) {
+                if (!day || typeof day !== 'object') return false;
+                if (typeof day.id !== 'string' || !day.id) return false;
+                if (typeof day.cls !== 'string') return false;
+                if (typeof day.dow !== 'number' || day.dow < 0 || day.dow > 6) return false;
+                if (typeof day.titulo !== 'string') return false;
+                if (!Array.isArray(day.ejercicios) || day.ejercicios.length === 0) return false;
+                for (const ex of day.ejercicios) {
+                    if (!ex || typeof ex !== 'object') return false;
+                    if (typeof ex.id !== 'string' || !ex.id) return false;
+                    if (seenIds.has(ex.id)) return false; // IDs únicos
+                    seenIds.add(ex.id);
+                    if (typeof ex.nombre !== 'string' || !ex.nombre) return false;
+                    if (typeof ex.series !== 'number' || ex.series <= 0 || ex.series > 20) return false;
+                    if (typeof ex.reps !== 'number' && typeof ex.repsLabel !== 'string') return false;
+                }
+            }
+            if (data.cardio != null) {
+                if (typeof data.cardio !== 'object') return false;
+                if (typeof data.cardio.titulo !== 'string') return false;
+                if (!Array.isArray(data.cardio.filas)) return false;
+            }
+            return true;
+        }
+
+        function loadStoredRoutine() {
+            try {
+                const raw = localStorage.getItem(ROUTINE_KEY);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                return isValidRoutineData(parsed) ? parsed : null;
+            } catch { return null; }
+        }
+
+        let ROUTINE, CARDIO;
+        (function applyStoredRoutine() {
+            const stored = loadStoredRoutine();
+            if (stored) {
+                ROUTINE = stored.routine;
+                CARDIO  = stored.cardio || DEFAULT_CARDIO;
+            } else {
+                ROUTINE = DEFAULT_ROUTINE;
+                CARDIO  = DEFAULT_CARDIO;
+            }
+        })();
 
         // ========== ESTADO ==========
         const STORAGE_KEY = 'gym:state';
@@ -1177,6 +1312,109 @@
                 focusTodayFirstPending();
             }
         });
+
+        // ========== IMPORT / EXPORT DE RUTINA ==========
+        const hintEl = document.getElementById('data-hint');
+        let hintResetTimer = null;
+        function showHint(msg, type) {
+            hintEl.textContent = msg;
+            hintEl.classList.remove('is-error', 'is-success');
+            if (type === 'error') hintEl.classList.add('is-error');
+            if (type === 'success') hintEl.classList.add('is-success');
+            if (hintResetTimer) clearTimeout(hintResetTimer);
+            hintResetTimer = setTimeout(() => {
+                hintEl.textContent = 'Exportá tu rutina como JSON, editala y reimportala. Tu progreso e historial no se borran.';
+                hintEl.classList.remove('is-error', 'is-success');
+            }, 6000);
+        }
+
+        function exportRoutine() {
+            const data = {
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                routine: ROUTINE,
+                cardio: CARDIO
+            };
+            try {
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `gym-rutina-${new Date().toISOString().slice(0,10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                showHint('Rutina exportada.', 'success');
+            } catch (err) {
+                showHint('No se pudo exportar: ' + err.message, 'error');
+            }
+        }
+
+        function applyImportedRoutine(data) {
+            try {
+                localStorage.setItem(ROUTINE_KEY, JSON.stringify(data));
+            } catch (err) {
+                showHint('No se pudo guardar la rutina: ' + err.message, 'error');
+                return;
+            }
+            ROUTINE = data.routine;
+            CARDIO  = data.cardio || DEFAULT_CARDIO;
+            render();
+            updateGlobalProgress();
+            focusTodayFirstPending();
+            showHint(`Rutina importada (${ROUTINE.length} días).`, 'success');
+        }
+
+        function importRoutineFromFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                let data;
+                try {
+                    data = JSON.parse(e.target.result);
+                } catch (err) {
+                    showHint('JSON inválido: ' + err.message, 'error');
+                    return;
+                }
+                if (!isValidRoutineData(data)) {
+                    showHint('Formato inválido. Revisá días, IDs únicos y campos requeridos.', 'error');
+                    return;
+                }
+                const summary = `${data.routine.length} día(s) y ${data.routine.reduce((n, d) => n + d.ejercicios.length, 0)} ejercicio(s)`;
+                if (!confirm(`Reemplazar la rutina actual por la importada (${summary})?\n\nTu progreso semanal e historial no se borran. Si cambiaste IDs de ejercicios, su progreso puede no aparecer.`)) {
+                    return;
+                }
+                applyImportedRoutine(data);
+            };
+            reader.onerror = () => showHint('No se pudo leer el archivo.', 'error');
+            reader.readAsText(file);
+        }
+
+        function restoreDefaultRoutine() {
+            if (!localStorage.getItem(ROUTINE_KEY)) {
+                showHint('Ya estás usando la rutina por defecto.', 'success');
+                return;
+            }
+            if (!confirm('Restaurar la rutina por defecto y descartar la importada?')) return;
+            localStorage.removeItem(ROUTINE_KEY);
+            ROUTINE = DEFAULT_ROUTINE;
+            CARDIO  = DEFAULT_CARDIO;
+            render();
+            updateGlobalProgress();
+            focusTodayFirstPending();
+            showHint('Rutina por defecto restaurada.', 'success');
+        }
+
+        document.getElementById('btn-export').addEventListener('click', exportRoutine);
+        const fileInput = document.getElementById('file-import');
+        document.getElementById('btn-import').addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            importRoutineFromFile(file);
+            e.target.value = ''; // permite reimportar el mismo archivo
+        });
+        document.getElementById('btn-restore-default').addEventListener('click', restoreDefaultRoutine);
 
         // ========== TIMER DE DESCANSO (pastilla flotante) ==========
         const restPill   = document.getElementById('rest-pill');
