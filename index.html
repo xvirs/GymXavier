@@ -555,6 +555,31 @@
             letter-spacing: 1px;
         }
         .btn-data-secondary:active { background: rgba(255,255,255,0.05); }
+        .paste-panel {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .paste-area {
+            width: 100%;
+            min-height: 140px;
+            background: #161616;
+            color: var(--text);
+            border: 1px solid #2a2a2a;
+            border-radius: 2px;
+            padding: 10px;
+            font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+            font-size: 0.78rem;
+            line-height: 1.45;
+            resize: vertical;
+        }
+        .paste-area::placeholder { color: var(--subtext); opacity: 0.7; }
+        .paste-area:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(255,205,17,0.3);
+        }
         .data-hint {
             margin: 12px 0 0 0;
             color: var(--subtext);
@@ -712,6 +737,15 @@
                 </button>
                 <button class="btn-data" id="btn-import" type="button">
                     <span aria-hidden="true">📥</span><span>Importar</span>
+                </button>
+            </div>
+            <button class="btn-data-secondary" id="btn-paste-toggle" type="button" aria-expanded="false" aria-controls="paste-panel">
+                + Pegar JSON
+            </button>
+            <div class="paste-panel hidden" id="paste-panel">
+                <textarea id="paste-area" class="paste-area" rows="8" spellcheck="false" placeholder='Pegá acá el JSON exportado&#10;{"version":1,"routine":[...]}'></textarea>
+                <button class="btn-data" id="btn-paste-apply" type="button">
+                    <span aria-hidden="true">✓</span><span>Aplicar JSON pegado</span>
                 </button>
             </div>
             <button class="btn-data-secondary" id="btn-restore-default" type="button">
@@ -1366,27 +1400,30 @@
             showHint(`Rutina importada (${ROUTINE.length} días).`, 'success');
         }
 
+        function tryImportRoutineFromText(text) {
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (err) {
+                showHint('JSON inválido: ' + err.message, 'error');
+                return false;
+            }
+            if (!isValidRoutineData(data)) {
+                showHint('Formato inválido. Revisá días, IDs únicos y campos requeridos.', 'error');
+                return false;
+            }
+            const summary = `${data.routine.length} día(s) y ${data.routine.reduce((n, d) => n + d.ejercicios.length, 0)} ejercicio(s)`;
+            if (!confirm(`Reemplazar la rutina actual por la importada (${summary})?\n\nTu progreso semanal e historial no se borran. Si cambiaste IDs de ejercicios, su progreso puede no aparecer.`)) {
+                return false;
+            }
+            applyImportedRoutine(data);
+            return true;
+        }
+
         function importRoutineFromFile(file) {
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = (e) => {
-                let data;
-                try {
-                    data = JSON.parse(e.target.result);
-                } catch (err) {
-                    showHint('JSON inválido: ' + err.message, 'error');
-                    return;
-                }
-                if (!isValidRoutineData(data)) {
-                    showHint('Formato inválido. Revisá días, IDs únicos y campos requeridos.', 'error');
-                    return;
-                }
-                const summary = `${data.routine.length} día(s) y ${data.routine.reduce((n, d) => n + d.ejercicios.length, 0)} ejercicio(s)`;
-                if (!confirm(`Reemplazar la rutina actual por la importada (${summary})?\n\nTu progreso semanal e historial no se borran. Si cambiaste IDs de ejercicios, su progreso puede no aparecer.`)) {
-                    return;
-                }
-                applyImportedRoutine(data);
-            };
+            reader.onload = (e) => tryImportRoutineFromText(e.target.result);
             reader.onerror = () => showHint('No se pudo leer el archivo.', 'error');
             reader.readAsText(file);
         }
@@ -1415,6 +1452,28 @@
             e.target.value = ''; // permite reimportar el mismo archivo
         });
         document.getElementById('btn-restore-default').addEventListener('click', restoreDefaultRoutine);
+
+        const pasteToggle = document.getElementById('btn-paste-toggle');
+        const pastePanel  = document.getElementById('paste-panel');
+        const pasteArea   = document.getElementById('paste-area');
+        function setPastePanelOpen(open) {
+            pastePanel.classList.toggle('hidden', !open);
+            pasteToggle.textContent = open ? '− Pegar JSON' : '+ Pegar JSON';
+            pasteToggle.setAttribute('aria-expanded', String(open));
+        }
+        pasteToggle.addEventListener('click', () => {
+            const willOpen = pastePanel.classList.contains('hidden');
+            setPastePanelOpen(willOpen);
+            if (willOpen) setTimeout(() => pasteArea.focus(), 60);
+        });
+        document.getElementById('btn-paste-apply').addEventListener('click', () => {
+            const text = pasteArea.value.trim();
+            if (!text) { showHint('Pegá un JSON primero.', 'error'); return; }
+            if (tryImportRoutineFromText(text)) {
+                pasteArea.value = '';
+                setPastePanelOpen(false);
+            }
+        });
 
         // ========== TIMER DE DESCANSO (pastilla flotante) ==========
         const restPill   = document.getElementById('rest-pill');

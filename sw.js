@@ -1,7 +1,7 @@
 // Gym Pro Tracker - Service Worker
 // Bumpea la versión cuando cambies assets cacheados para limpiar caches viejos.
 // La estrategia es network-first para HTML, así los cambios se ven sin hacks.
-const CACHE_VERSION = 'gym-tracker-v8';
+const CACHE_VERSION = 'gym-tracker-v9';
 
 const URLS_TO_CACHE = [
   './',
