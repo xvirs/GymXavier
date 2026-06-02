@@ -520,8 +520,8 @@
         }
         .data-actions {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
             margin-bottom: 10px;
         }
         .btn-data {
@@ -734,6 +734,9 @@
             <div class="data-actions">
                 <button class="btn-data" id="btn-export" type="button">
                     <span aria-hidden="true">📤</span><span>Exportar</span>
+                </button>
+                <button class="btn-data" id="btn-copy-json" type="button">
+                    <span aria-hidden="true">📋</span><span>Copiar</span>
                 </button>
                 <button class="btn-data" id="btn-import" type="button">
                     <span aria-hidden="true">📥</span><span>Importar</span>
@@ -1362,13 +1365,17 @@
             }, 6000);
         }
 
-        function exportRoutine() {
-            const data = {
+        function buildRoutineExportData() {
+            return {
                 version: 1,
                 exportedAt: new Date().toISOString(),
                 routine: ROUTINE,
                 cardio: CARDIO
             };
+        }
+
+        function exportRoutine() {
+            const data = buildRoutineExportData();
             try {
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
@@ -1382,6 +1389,38 @@
                 showHint('Rutina exportada.', 'success');
             } catch (err) {
                 showHint('No se pudo exportar: ' + err.message, 'error');
+            }
+        }
+
+        async function copyRoutineJSON() {
+            const text = JSON.stringify(buildRoutineExportData(), null, 2);
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    showHint('JSON copiado al portapapeles.', 'success');
+                    return;
+                }
+            } catch {} // sigue al fallback
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.setAttribute('readonly', '');
+                ta.style.position = 'fixed';
+                ta.style.top = '0';
+                ta.style.left = '0';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                const ok = document.execCommand('copy');
+                document.body.removeChild(ta);
+                if (ok) {
+                    showHint('JSON copiado al portapapeles.', 'success');
+                } else {
+                    showHint('No se pudo copiar. Usá Exportar.', 'error');
+                }
+            } catch (err) {
+                showHint('No se pudo copiar: ' + (err.message || 'error'), 'error');
             }
         }
 
@@ -1444,6 +1483,7 @@
         }
 
         document.getElementById('btn-export').addEventListener('click', exportRoutine);
+        document.getElementById('btn-copy-json').addEventListener('click', copyRoutineJSON);
         const fileInput = document.getElementById('file-import');
         document.getElementById('btn-import').addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', (e) => {
